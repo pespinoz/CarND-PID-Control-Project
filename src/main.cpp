@@ -37,13 +37,16 @@ int main() {
 
     // TODO: Initialize the pid variable
     PID pid;
-    pid.Init(-0.05, 0.0, -0.005); // Kp, Ki, Kd
+    pid.Init(-0.06, -0.0, -0.098); // Kp, Ki, Kd
+
+    PID pid_speed;
+    pid_speed.Init(-0.3, 0, -0.001); // Kp, Ki, Kd
 
     auto now0 = std::chrono::system_clock::now();
     auto now0_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now0);
     auto previous_timestamp = now0_ms.time_since_epoch();
 
-    h.onMessage([&pid, &file, &previous_timestamp](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
+    h.onMessage([&pid, &file, &previous_timestamp, &pid_speed](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode) {
         // "42" at the start of the message means there's a websocket message event.
         // The 4 signifies a websocket message
         // The 2 signifies a websocket event
@@ -61,7 +64,6 @@ int main() {
                     auto now = std::chrono::system_clock::now();
                     auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);
                     auto timestamp = now_ms.time_since_epoch();
-
                     auto delta_t_ = timestamp - previous_timestamp;
                     double delta_t = delta_t_.count()/1000.0;
                     previous_timestamp = timestamp;
@@ -74,12 +76,16 @@ int main() {
                     pid.UpdateError(cte, delta_t);
                     double steer_value = pid.TotalError();
 
+                    double speed_reference = 40.*(1.- 0.0 * fabs(steer_value));
+                    pid_speed.UpdateError(speed - speed_reference, delta_t);
+                    double throttle_value  = pid_speed.TotalError();
+
                     // DEBUG
                     std::cout << "CTE: " << cte << " Steering Value: " << steer_value << std::endl;
 
                     json msgJson;
                     msgJson["steering_angle"] = steer_value;
-                    msgJson["throttle"] = 0.3;
+                    msgJson["throttle"] = throttle_value;
                     auto msg = "42[\"steer\"," + msgJson.dump() + "]";
                     std::cout << msg << std::endl;
                     ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
@@ -87,7 +93,8 @@ int main() {
                     // Write out
                     if (file.is_open()) {
                         file.precision(7);
-                        file << delta_t << ", " << cte << ", " << speed << ", " << angle << ", " << steer_value << std::endl;
+                        file << delta_t << ", " << cte << ", " << speed << ", " << angle << ", " << steer_value <<
+                             ", " << speed_reference << ", " << throttle_value << std::endl;
                     }
                 }
             } else {
