@@ -29,7 +29,7 @@ void PID::UpdateError(double cte, double delta_timestamp) {
 }
 
 double PID::TotalError() {
-    double control_value = Kp*p_error + Kd*d_error + Ki*i_error;
+    double control_value = -Kp*p_error - Kd*d_error - Ki*i_error;
     if(control_value > 1){
         control_value = 1.0;
     }else if(control_value < -1){

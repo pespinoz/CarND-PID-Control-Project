@@ -37,10 +37,10 @@ int main() {
 
     // TODO: Initialize the pid variable
     PID pid;
-    pid.Init(-0.06, -0.0, -0.098); // Kp, Ki, Kd
+    pid.Init(0.06, 0.0, 0.098); // Kp, Ki, Kd
 
     PID pid_speed;
-    pid_speed.Init(-0.3, 0, -0.001); // Kp, Ki, Kd
+    pid_speed.Init(0.3, 0.0, 0.001); // Kp, Ki, Kd
 
     auto now0 = std::chrono::system_clock::now();
     auto now0_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now0);
